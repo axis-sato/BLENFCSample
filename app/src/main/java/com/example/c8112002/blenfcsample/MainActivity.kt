@@ -12,9 +12,24 @@ import android.nfc.NdefRecord
 import android.os.PatternMatcher
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var pendingIntent: PendingIntent
-    private lateinit var mAdapter: NfcAdapter
-    private lateinit var intentFiltersArray: Array<IntentFilter>
+    private val pendingIntent: PendingIntent by lazy {
+        PendingIntent.getActivity(
+                this,
+                0,
+                Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                0
+        )
+    }
+    private val mAdapter: NfcAdapter by lazy {
+        NfcAdapter.getDefaultAdapter(applicationContext)
+    }
+    private val intentFiltersArray: Array<IntentFilter> by lazy {
+        val ndef = IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED);
+        ndef.addDataScheme("vnd.android.nfc")
+        ndef.addDataAuthority("ext", null);
+        ndef.addDataPath("/android.com:pkg", PatternMatcher.PATTERN_PREFIX);
+        arrayOf(ndef)
+    }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,20 +37,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         println("MainActivity onCreate")
-
-        pendingIntent = PendingIntent.getActivity(
-                this, 0, Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0)
-        mAdapter = NfcAdapter.getDefaultAdapter(applicationContext)
-
-        val ndef = IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED);
-        ndef.addDataScheme("vnd.android.nfc")
-        ndef.addDataAuthority("ext", null);
-        ndef.addDataPath("/android.com:pkg", PatternMatcher.PATTERN_PREFIX);
-        intentFiltersArray = arrayOf(ndef)
-//        techListsArray = new String[][] { new String[] { NfcF.class.getName() } };
-
-
-
         println("Intent: ${intent}")
 
         if (intent != null && intent.action == NfcAdapter.ACTION_NDEF_DISCOVERED) {
@@ -46,13 +47,13 @@ class MainActivity : AppCompatActivity() {
 
 
     override fun onResume() {
-        super.onResume();
-        mAdapter.enableForegroundDispatch(this, pendingIntent, intentFiltersArray, null);
+        super.onResume()
+        mAdapter.enableForegroundDispatch(this, pendingIntent, intentFiltersArray, null)
     }
 
     override fun onPause() {
-        super.onPause();
-        mAdapter.disableForegroundDispatch(this);
+        super.onPause()
+        mAdapter.disableForegroundDispatch(this)
     }
 
     override fun onNewIntent(intent: Intent) {
