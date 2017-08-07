@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.nfc.NfcAdapter
 import android.nfc.NdefMessage
 import android.nfc.NdefRecord
+import android.os.PatternMatcher
 
 class MainActivity : AppCompatActivity() {
     private lateinit var pendingIntent: PendingIntent
@@ -27,7 +28,9 @@ class MainActivity : AppCompatActivity() {
         mAdapter = NfcAdapter.getDefaultAdapter(applicationContext)
 
         val ndef = IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED);
-        ndef.addDataType("*/*")
+        ndef.addDataScheme("vnd.android.nfc")
+        ndef.addDataAuthority("ext", null);
+        ndef.addDataPath("/android.com:pkg", PatternMatcher.PATTERN_PREFIX);
         intentFiltersArray = arrayOf(ndef)
 //        techListsArray = new String[][] { new String[] { NfcF.class.getName() } };
 
@@ -37,22 +40,19 @@ class MainActivity : AppCompatActivity() {
 
         if (intent != null && intent.action == NfcAdapter.ACTION_NDEF_DISCOVERED) {
             val rawMessages = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)
-            if (rawMessages != null) {
-                rawMessages
-                        .map { it as NdefMessage }
-                        .forEach { println("message: $it") }
-            }
+            rawMessages?.map { it as NdefMessage }?.forEach { println("message: $it") }
         }
+    }
+
+
+    override fun onResume() {
+        super.onResume();
+        mAdapter.enableForegroundDispatch(this, pendingIntent, intentFiltersArray, null);
     }
 
     override fun onPause() {
         super.onPause();
         mAdapter.disableForegroundDispatch(this);
-    }
-
-    override fun onResume() {
-        super.onResume();
-        mAdapter.enableForegroundDispatch(this, pendingIntent, intentFiltersArray, null);
     }
 
     override fun onNewIntent(intent: Intent) {
